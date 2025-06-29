@@ -17,7 +17,7 @@ Criar um fluxo local de ponta a ponta para:
 ---
 
 ## 🛠️ Estrutura Atual do Projeto
-
+```bash
 open-cnpj-data-pipeline/
 ├── data_ingestion/
 │ └── scripts/
@@ -28,7 +28,7 @@ open-cnpj-data-pipeline/
 ├── processed_data/ # Dados tratados (Parquet / CSV)
 ├── README.md
 └── requirements.txt
-
+```
 ---
 
 ## ✅ Fases do Pipeline
