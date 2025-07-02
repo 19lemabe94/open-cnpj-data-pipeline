@@ -20,33 +20,37 @@ def unzip_all_files(raw_dir, dest_dir):
 
     log("🚀 Iniciando processo de extração dos arquivos ZIP...")
 
-    for file_name in os.listdir(raw_dir):
-        if file_name.endswith(".zip"):
-            zip_path = os.path.join(raw_dir, file_name)
-            target_folder = os.path.join(dest_dir, os.path.splitext(file_name)[0])
+    for root, _, files in os.walk(raw_dir):
+        for file_name in files:
+            if file_name.endswith(".zip"):
+                zip_path = os.path.join(root, file_name)
 
-            log(f"🔓 Extraindo: {file_name} para {target_folder}")
+                # Construir o caminho de destino replicando a estrutura de pastas
+                relative_path = os.path.relpath(root, raw_dir)
+                target_folder = os.path.join(dest_dir, relative_path, os.path.splitext(file_name)[0])
 
-            try:
-                if not os.path.exists(target_folder):
-                    os.makedirs(target_folder)
+                log(f"🔓 Extraindo: {zip_path} para {target_folder}")
 
-                with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-                    zip_ref.extractall(target_folder)
+                try:
+                    if not os.path.exists(target_folder):
+                        os.makedirs(target_folder)
 
-                log(f"✅ Extração concluída: {file_name}")
+                    with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                        zip_ref.extractall(target_folder)
 
-                # Opcional: excluir o zip após extração bem-sucedida
-                # os.remove(zip_path)
+                    log(f"✅ Extração concluída: {file_name}")
 
-            except zipfile.BadZipFile:
-                log(f"❌ ERRO: Arquivo ZIP corrompido: {file_name}")
+                    # Se quiser excluir o ZIP após extração bem-sucedida, descomente:
+                    # os.remove(zip_path)
 
-            except OSError as e:
-                log(f"❌ ERRO: Falha de I/O ao extrair {file_name}: {str(e)}")
+                except zipfile.BadZipFile:
+                    log(f"❌ ERRO: Arquivo ZIP corrompido: {file_name}")
 
-            except Exception as e:
-                log(f"❌ ERRO inesperado ao extrair {file_name}: {str(e)}")
+                except OSError as e:
+                    log(f"❌ ERRO: Falha de I/O ao extrair {file_name}: {str(e)}")
+
+                except Exception as e:
+                    log(f"❌ ERRO inesperado ao extrair {file_name}: {str(e)}")
 
     log("🏁 Processo de extração finalizado.")
 

@@ -1,52 +1,60 @@
 import os
+import re
 from datetime import datetime
 
 LOG_FILE = "../unzipped/unzip_log.txt"
 
-def parse_log_file(log_file):
-    extracted = 0
-    errors = 0
+def parse_log_file(log_path):
+    if not os.path.exists(log_path):
+        print(f"❌ Arquivo de log não encontrado: {log_path}")
+        return
+
+    extracted_count = 0
+    corrupted_count = 0
+    io_error_count = 0
+    unexpected_error_count = 0
     start_time = None
     end_time = None
 
-    with open(log_file, "r", encoding="utf-8") as f:
+    with open(log_path, "r", encoding="utf-8") as f:
         for line in f:
-            # Captura o timestamp
-            timestamp_str = line.split(']')[0].strip('[')
-            try:
-                timestamp = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
-                if not start_time:
-                    start_time = timestamp
-                end_time = timestamp
-            except ValueError:
-                continue  # Se alguma linha estiver fora do formato, ignora.
+            # Verifica o início do processo
+            if "Iniciando processo de extração" in line:
+                timestamp_str = line.split(']')[0].strip('[')
+                start_time = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
 
-            # Contagem de sucesso
-            if "✅ Extração concluída:" in line:
-                extracted += 1
+            # Verifica o fim do processo
+            elif "Processo de extração finalizado" in line:
+                timestamp_str = line.split(']')[0].strip('[')
+                end_time = datetime.strptime(timestamp_str, "%Y-%m-%d %H:%M:%S")
 
-            # Contagem de erro
-            if "❌ ERRO: Arquivo ZIP corrompido:" in line:
-                errors += 1
+            # Conta arquivos extraídos com sucesso
+            elif "✅ Extração concluída" in line:
+                extracted_count += 1
 
-    return extracted, errors, start_time, end_time
+            # Conta arquivos corrompidos
+            elif "❌ ERRO: Arquivo ZIP corrompido" in line:
+                corrupted_count += 1
 
-def analyze_unzip_log():
-    if not os.path.exists(LOG_FILE):
-        print("❌ Log de extração não encontrado!")
-        return
+            # Conta erros de I/O
+            elif "❌ ERRO: Falha de I/O" in line:
+                io_error_count += 1
 
-    extracted, errors, start_time, end_time = parse_log_file(LOG_FILE)
+            # Conta erros inesperados
+            elif "❌ ERRO inesperado" in line:
+                unexpected_error_count += 1
 
-    print("\n📊 Análise do Log de Extração 📊")
-    print(f"✅ Arquivos extraídos com sucesso: {extracted}")
-    print(f"❌ Arquivos com erro (corrompidos): {errors}")
+    print("\n📊 Análise do Log de Extração:")
+    print(f"Total de arquivos extraídos com sucesso: {extracted_count}")
+    print(f"Total de arquivos ZIP corrompidos: {corrupted_count}")
+    print(f"Total de erros de I/O (ex: falta de espaço em disco): {io_error_count}")
+    print(f"Total de erros inesperados: {unexpected_error_count}")
 
     if start_time and end_time:
-        total_time = end_time - start_time
-        print(f"⏱️ Tempo total de execução: {total_time}")
+        duration = end_time - start_time
+        print(f"Tempo total de execução: {duration}")
     else:
-        print("⚠️ Não foi possível calcular o tempo total (timestamps ausentes ou mal formatados).")
+        print("⚠️ Não foi possível calcular o tempo total (início ou fim não encontrado no log).")
 
 if __name__ == "__main__":
-    analyze_unzip_log()
+    parse_log_file(LOG_FILE)
